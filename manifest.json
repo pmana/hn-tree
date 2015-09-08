@@ -1,0 +1,15 @@
+{
+  "manifest_version": 2,
+  "name": "HN Tree View",
+  "version": "0.1",
+  "content_scripts": [
+    {
+      "matches": [
+        "*://news.ycombinator.com/item?*"
+      ],
+      "js": [
+        "hn-tree.js"
+      ]
+    }
+  ]
+}
