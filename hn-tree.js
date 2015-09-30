@@ -33,12 +33,16 @@
     addCommentWithChildren(topLevelComment);
   }
 
-  function addCommentWithChildren(comment) {
+  function addCommentWithChildren(comment, parent) {
     var div = createCommentDiv(comment);
-    document.body.appendChild(div);
+    if (parent) {
+      parent.appendChild(div);
+    } else {
+      document.body.appendChild(div);
+    }
 
     for (var childComment of comment.children) {
-      addCommentWithChildren(childComment);
+      addCommentWithChildren(childComment, div);
     }
   }
 
