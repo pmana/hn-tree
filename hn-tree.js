@@ -1,6 +1,6 @@
 (function() {
   var comments = [];
-  var indentLevels = {};
+  var potentialParents = [];
   var $comments = document.querySelectorAll('tr.athing');
 
   // skip the first on purpose (it's the post submission details)
@@ -18,17 +18,37 @@
       parent: parent
     };
 
-    indentLevels[indentLevel] = indentLevels[indentLevel] || [];
-    indentLevels[indentLevel].push(comment);
-
     if (!parent) {
       comments.push(comment);
     } else {
       parent.children.push(comment);
     }
+
+    potentialParents.push(comment);
   }
 
-  console.log(comments);
+  document.body.innerHTML = '';
+
+  for (var topLevelComment of comments) {
+    addCommentWithChildren(topLevelComment);
+  }
+
+  function addCommentWithChildren(comment) {
+    var div = createCommentDiv(comment);
+    document.body.appendChild(div);
+
+    for (var childComment of comment.children) {
+      addCommentWithChildren(childComment);
+    }
+  }
+
+  function createCommentDiv(comment) {
+    var div = document.createElement('div');
+    div.className = 'comment';
+    div.id = comment.id;
+    div.innerHTML = comment.$comment.innerText;
+    return div;
+  }
 
   // add a [-] element (hover: pointer) that when clicked replaces the contents of the <table>
   // with the comment header, including [+] and (5 children)
@@ -46,10 +66,12 @@
   }
 
   function getCommentParent(indentLevel) {
-    if (indentLevels[indentLevel - 1]) {
-      return indentLevels[indentLevel - 1].slice(-1)[0];
-    } else {
-      return null;
+    while (potentialParents.length > 0) {
+      var potentialParent = potentialParents.slice(-1)[0];
+      if (potentialParent.indentLevel == indentLevel - 1) {
+        return potentialParent;
+      }
+      potentialParents.pop();
     }
   }
 })();
