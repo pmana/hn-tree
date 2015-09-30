@@ -47,6 +47,8 @@
     div.className = 'comment';
     div.id = comment.id;
     div.innerHTML = comment.$comment.innerText;
+    div.style.marginTop = div.style.marginBottom = 20;
+    div.style.marginLeft = comment.indentLevel * 40;
     return div;
   }
 
