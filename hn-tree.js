@@ -44,11 +44,9 @@
 
   function createCommentDiv(comment) {
     var div = document.createElement('div');
-    div.className = 'comment';
+    div.className = 'comment ' + (comment.indentLevel % 2 === 0 ? 'comment--even' : 'comment--odd');
     div.id = comment.id;
     div.innerHTML = comment.$comment.innerText;
-    div.style.marginTop = div.style.marginBottom = 20;
-    div.style.marginLeft = comment.indentLevel * 40;
     return div;
   }
 

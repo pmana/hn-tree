@@ -9,6 +9,9 @@
       ],
       "js": [
         "hn-tree.js"
+      ],
+      "css": [
+        "hn-tree.css"
       ]
     }
   ]
