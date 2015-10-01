@@ -28,18 +28,17 @@
   }
 
   document.body.innerHTML = '';
+  var container = document.createElement('div');
+  container.className = 'container';
+  document.body.appendChild(container);
 
   for (var topLevelComment of comments) {
-    addCommentWithChildren(topLevelComment);
+    addCommentWithChildren(topLevelComment, container);
   }
 
   function addCommentWithChildren(comment, parent) {
     var div = createCommentDiv(comment);
-    if (parent) {
-      parent.appendChild(div);
-    } else {
-      document.body.appendChild(div);
-    }
+    parent.appendChild(div);
 
     for (var childComment of comment.children) {
       addCommentWithChildren(childComment, div);
