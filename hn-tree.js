@@ -38,23 +38,34 @@
 
   function addCommentWithChildren(comment, parent) {
     var div = createCommentDiv(comment);
-    parent.appendChild(div);
 
     for (var childComment of comment.children) {
       addCommentWithChildren(childComment, div);
     }
+
+    parent.appendChild(div);
   }
 
   function createCommentDiv(comment) {
     var div = document.createElement('div');
-    div.className = 'comment ' + (comment.indentLevel % 2 === 0 ? 'comment--even' : 'comment--odd');
+    div.className = getCommentClassName(comment);
     div.id = comment.id;
     div.innerHTML = comment.$comment.innerText;
+    div.onclick = function(e) {
+      onCommentClick(comment, div);
+      e.stopPropagation();
+    };
     return div;
   }
 
-  // add a [-] element (hover: pointer) that when clicked replaces the contents of the <table>
-  // with the comment header, including [+] and (5 children)
+  function getCommentClassName(comment) {
+    return 'comment ' +
+      (comment.indentLevel % 2 === 0 ? 'comment--even' : 'comment--odd');
+  }
+
+  function onCommentClick(comment, element) {
+      element.style.display = 'none';
+  }
 
   function getCommentHeader($comment) {
     return $comment.querySelector('.comhead');
