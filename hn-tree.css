@@ -20,9 +20,9 @@ body {
 }
 
 .comment--odd {
-  background-color: #f4f4f4;
+  background-color: #eff2ff;
 }
 
 .comment--even {
-  background-color: #fdfdfd;
+  background-color: #fafaff;
 }
