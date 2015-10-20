@@ -7,6 +7,7 @@
       this.$header = $comment.querySelector('.comhead')
       this.$comment = $comment.querySelector('.comment')
       this.$containingSpan = this.$comment.querySelector('span')
+      this.isDead = !this.$containingSpan
       this.indentLevel = indentLevel
       this.children = []
       this.parent = parent
@@ -27,24 +28,28 @@
 
     getCommentClassName() {
       let parity = this.indentLevel % 2 === 0 ? 'even' : 'odd'
-      let state = this.$containingSpan
-        ? this.$containingSpan.className == 'c00' ? 'healthy' : 'dead'
-        : 'deleted'
+      let state = this.isDead
+        ? 'deleted'
+        : this.$containingSpan.className == 'c00' ? 'healthy' : 'dead'
       return `comment comment--${parity} comment--${state}`
     }
 
     getBody() {
-      let span = this.$containingSpan
-      if (!span) {
+      if (this.isDead) {
         return [createParagraph(this.$comment.innerText)]
       }
 
-      let children = Array.from(span.childNodes)
+      let children = Array.from(this.$containingSpan.childNodes)
       let idx = children.findIndex(x => x.nodeName === 'P')
       let firstParagraph = createParagraph(children.slice(0, idx))
-      let reply = createReply(children.pop())
+      let hasReply = this.$comment.querySelector('.reply a') !== null
+      if (hasReply) {
+        let reply = createReply(children.pop())
+        let otherParagraphs = createParagraphs(children.slice(idx))
+        return [firstParagraph, ...otherParagraphs, reply]
+      }
       let otherParagraphs = createParagraphs(children.slice(idx))
-      return [firstParagraph, ...otherParagraphs, reply]
+      return [firstParagraph, ...otherParagraphs]
 
       function createParagraph(nodes) {
         let p = document.createElement('p')
@@ -66,9 +71,9 @@
 
       function quotify(node) {
         let text = node.textContent.trim()
-        if (text.startsWith('> ')) {
+        if (text.startsWith('>')) {
           let quote = document.createElement('blockquote')
-          quote.innerText = text.substring(2)
+          quote.innerText = text.substring(1)
           return quote
         }
         return node
@@ -84,6 +89,7 @@
 
       function createReply(element) {
         let link = element.querySelector('a')
+        if (!link) console.error(element)
         let p = document.createElement('p')
         p.appendChild(link)
         p.className = 'reply'
