@@ -17,6 +17,7 @@
     createElement() {
       let elm = document.createElement('div')
       elm.className = this.getCommentClassName()
+      elm.appendChild(this.getHeader())
       this.getBody().forEach(x => elm.appendChild(x))
       let that = this // todo: thought we didn't need to do this any more with es6?
       elm.onclick = function(e) {
@@ -36,7 +37,9 @@
 
     getBody() {
       if (this.isDead) {
-        return [createParagraph(this.$comment.innerText)]
+        let deadParagraph = document.createElement('p')
+        deadParagraph.innerText = this.$comment.innerText.trim()
+        return [createParagraph([deadParagraph])]
       }
 
       let children = Array.from(this.$containingSpan.childNodes)
@@ -89,7 +92,6 @@
 
       function createReply(element) {
         let link = element.querySelector('a')
-        if (!link) console.error(element)
         let p = document.createElement('p')
         p.appendChild(link)
         p.className = 'reply'
@@ -97,8 +99,36 @@
       }
     }
 
+    getHeader() {
+      let userLink = this.$header.querySelector('a[href*=user]')
+      let timeSubmitted = this.$header.querySelector('a[href*=item]')
+      let collapser = document.createElement('a')
+      collapser.innerText = '[-]'
+      let collapsed = false
+      collapser.onclick = function() {
+        if (!collapsed) {
+          console.log('collapse', userLink)
+        } else {
+          console.log('expand', userLink)
+        }
+      }
+      let header = document.createElement('div')
+      header.className = 'header'
+      header.appendChild(collapser)
+      if (userLink) {
+        header.appendChild(userLink)
+        header.appendChild(timeSubmitted)
+      } else {
+        header.className = 'header dead'
+        let deadText = document.createElement('span')
+        deadText.innerText = '[dead]'
+        header.appendChild(deadText)
+      }
+      return header
+    }
+
     onClick() {
-      this.element.style.display = 'none'
+      // this.element.style.display = 'none'
     }
   }
 
