@@ -11,20 +11,17 @@
       this.indentLevel = indentLevel
       this.children = []
       this.parent = parent
-      this.element = this.createElement()
+      this.header = this.getHeader()
+      this.body = this.getBody()
+      this.element = this.createElement(this.body, this.header)
     }
 
-    createElement() {
-      let elm = document.createElement('div')
-      elm.className = this.getCommentClassName()
-      elm.appendChild(this.getHeader())
-      this.getBody().forEach(x => elm.appendChild(x))
-      let that = this // todo: thought we didn't need to do this any more with es6?
-      elm.onclick = function(e) {
-        that.onClick()
-        e.stopPropagation()
-      }
-      return elm
+    createElement(body, header) {
+      let element = document.createElement('div')
+      element.className = this.getCommentClassName()
+      element.appendChild(header)
+      element.appendChild(body)
+      return element
     }
 
     getCommentClassName() {
@@ -36,10 +33,14 @@
     }
 
     getBody() {
+      let body = document.createElement('div')
+      body.className = 'body'
+
       if (this.isDead) {
         let deadParagraph = document.createElement('p')
         deadParagraph.innerText = this.$comment.innerText.trim()
-        return [createParagraph([deadParagraph])]
+        body.appendChild(createParagraph([deadParagraph]))
+        return body
       }
 
       let children = Array.from(this.$containingSpan.childNodes)
@@ -49,10 +50,14 @@
       if (hasReply) {
         let reply = createReply(children.pop())
         let otherParagraphs = createParagraphs(children.slice(idx))
-        return [firstParagraph, ...otherParagraphs, reply]
+        let allParagraphs = [firstParagraph, ...otherParagraphs, reply]
+        allParagraphs.forEach(x => body.appendChild(x))
+        return body
       }
       let otherParagraphs = createParagraphs(children.slice(idx))
-      return [firstParagraph, ...otherParagraphs]
+      let allParagraphs = [firstParagraph, ...otherParagraphs]
+      allParagraphs.forEach(x => body.appendChild(x))
+      return body
 
       function createParagraph(nodes) {
         let p = document.createElement('p')
@@ -102,19 +107,21 @@
     getHeader() {
       let userLink = this.$header.querySelector('a[href*=user]')
       let timeSubmitted = this.$header.querySelector('a[href*=item]')
-      let collapser = document.createElement('a')
-      collapser.innerText = '[-]'
-      let collapsed = false
-      collapser.onclick = function() {
-        if (!collapsed) {
-          console.log('collapse', userLink)
-        } else {
-          console.log('expand', userLink)
-        }
-      }
+      let toggle = document.createElement('a')
+      toggle.innerText = '[-]'
+      toggle.className = 'toggle'
       let header = document.createElement('div')
       header.className = 'header'
-      header.appendChild(collapser)
+      header.appendChild(toggle)
+      var that = this
+      header.onclick = function() {
+        if (that.collapsed) {
+          that.expand()
+        } else {
+          that.collapse()
+        }
+      }
+
       if (userLink) {
         header.appendChild(userLink)
         header.appendChild(timeSubmitted)
@@ -124,11 +131,29 @@
         deadText.innerText = '[dead]'
         header.appendChild(deadText)
       }
+      let childCount = document.createElement('span')
+      childCount.className = 'child-count'
+      header.appendChild(childCount)
       return header
     }
 
-    onClick() {
-      // this.element.style.display = 'none'
+    collapse() {
+      this.collapsed = true
+      this.element.querySelector('.body').style.display = 'none'
+      this.header.querySelector('.toggle').innerText = '[+]'
+      const childCount = `(${this.childCount} children)`
+      this.header.querySelector('.child-count').innerText = childCount
+    }
+
+    expand() {
+      this.collapsed = false
+      this.element.querySelector('.body').style.display = 'block'
+      this.header.querySelector('.toggle').innerText = '[-]'
+      this.header.querySelector('.child-count').innerText = ''
+    }
+
+    get childCount() {
+      return this.children.reduce((acc, x) => acc + 1 + x.childCount, 0)
     }
   }
 
@@ -188,9 +213,10 @@
   rootNode.appendChild(container)
 
   function attachCommentWithChildren(comment, parent) {
-    let elm = comment.element
-    comment.children.forEach(child => attachCommentWithChildren(child, elm))
-    parent.appendChild(elm)
+    let element = comment.element
+    let body = element.querySelector('.body')
+    comment.children.forEach(child => attachCommentWithChildren(child, body))
+    parent.appendChild(element)
   }
 })()
 
