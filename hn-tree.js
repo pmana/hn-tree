@@ -1,222 +1,227 @@
-(function() {
-  'use strict'
+(function hnTreeView() {
+  // this eslint rule is disabled because this line is necessary to enable
+  // Chrome's ES6 features
+  'use strict'; // eslint-disable-line strict
 
   // todo: looks like chrome doesn't yet support ES6 modules...
-  class Comment {
+  class HnComment {
     constructor($comment, indentLevel, parent) {
-      this.$header = $comment.querySelector('.comhead')
-      this.$comment = $comment.querySelector('.comment')
-      this.$containingSpan = this.$comment.querySelector('span')
-      this.isDead = !this.$containingSpan
-      this.indentLevel = indentLevel
-      this.children = []
-      this.parent = parent
-      this.header = this.getHeader()
-      this.body = this.getBody()
-      this.element = this.createElement(this.body, this.header)
+      this.$header = $comment.querySelector('.comhead');
+      this.$comment = $comment.querySelector('.comment');
+      this.$containingSpan = this.$comment.querySelector('span');
+      this.isDead = !this.$containingSpan;
+      this.indentLevel = indentLevel;
+      this.children = [];
+      this.parent = parent;
+      this.header = this.getHeader();
+      this.body = this.getBody();
+      this.element = this.createElement(this.body, this.header);
     }
 
     createElement(body, header) {
-      let element = document.createElement('div')
-      element.className = this.getCommentClassName()
-      element.appendChild(header)
-      element.appendChild(body)
-      return element
+      const element = document.createElement('div');
+      element.className = this.getCommentClassName();
+      element.appendChild(header);
+      element.appendChild(body);
+      return element;
     }
 
     getCommentClassName() {
-      let parity = this.indentLevel % 2 === 0 ? 'even' : 'odd'
-      let state = this.isDead
-        ? 'deleted'
-        : this.$containingSpan.className == 'c00' ? 'healthy' : 'dead'
-      return `comment comment--${parity} comment--${state}`
+      const parity = this.indentLevel % 2 === 0 ? 'even' : 'odd';
+      let state;
+      if (this.isDead) {
+        state = 'deleted';
+      } else {
+        state = this.$containingSpan.className === 'c00' ? 'healthy' : 'dead';
+      }
+      return `comment comment--${parity} comment--${state}`;
     }
 
     getBody() {
-      let body = document.createElement('div')
-      body.className = 'body'
-
-      if (this.isDead) {
-        let deadParagraph = document.createElement('p')
-        deadParagraph.innerText = this.$comment.innerText.trim()
-        body.appendChild(createParagraph([deadParagraph]))
-        return body
+      function quotify(node) {
+        const text = node.textContent.trim();
+        if (text.startsWith('>')) {
+          const quote = document.createElement('blockquote');
+          quote.innerText = text.substring(1);
+          return quote;
+        }
+        return node;
       }
 
-      let children = Array.from(this.$containingSpan.childNodes)
-      let idx = children.findIndex(x => x.nodeName === 'P')
-      let firstParagraph = createParagraph(children.slice(0, idx))
-      let hasReply = this.$comment.querySelector('.reply a') !== null
-      if (hasReply) {
-        let reply = createReply(children.pop())
-        let otherParagraphs = createParagraphs(children.slice(idx))
-        let allParagraphs = [firstParagraph, ...otherParagraphs, reply]
-        allParagraphs.forEach(x => body.appendChild(x))
-        return body
+      function removeSpan(element) {
+        const span = element.querySelector('span');
+        if (span) {
+          span.remove();
+        }
+        return element;
       }
-      let otherParagraphs = createParagraphs(children.slice(idx))
-      let allParagraphs = [firstParagraph, ...otherParagraphs]
-      allParagraphs.forEach(x => body.appendChild(x))
-      return body
 
       function createParagraph(nodes) {
-        let p = document.createElement('p')
-        nodes.forEach(x => {
-          if (x.nodeType === 3) { // text
-            p.appendChild(quotify(x))
+        const paragraph = document.createElement('p');
+        nodes.forEach(node => {
+          if (node.nodeType === 3) { // text
+            paragraph.appendChild(quotify(node));
           } else {
-            p.appendChild(removeSpan(x))
+            paragraph.appendChild(removeSpan(node));
           }
-        })
-        return p
+        });
+        return paragraph;
       }
 
       function createParagraphs(nodes) {
         return nodes
-          .filter(x => x.textContent.trim() !== '')
-          .map(x => createParagraph([x]))
-      }
-
-      function quotify(node) {
-        let text = node.textContent.trim()
-        if (text.startsWith('>')) {
-          let quote = document.createElement('blockquote')
-          quote.innerText = text.substring(1)
-          return quote
-        }
-        return node
-      }
-
-      function removeSpan(element) {
-        let span = element.querySelector('span')
-        if (span) {
-          span.remove()
-        }
-        return element
+          .filter(node => node.textContent.trim() !== '')
+          .map(node => createParagraph([node]));
       }
 
       function createReply(element) {
-        let link = element.querySelector('a')
-        let p = document.createElement('p')
-        p.appendChild(link)
-        p.className = 'reply'
-        return p
+        const link = element.querySelector('a');
+        const reply = document.createElement('p');
+        reply.appendChild(link);
+        reply.className = 'reply';
+        return reply;
       }
+
+      const body = document.createElement('div');
+      body.className = 'body';
+
+      if (this.isDead) {
+        const deadParagraph = document.createElement('p');
+        deadParagraph.innerText = this.$comment.innerText.trim();
+        body.appendChild(createParagraph([deadParagraph]));
+        return body;
+      }
+
+      const children = Array.from(this.$containingSpan.childNodes);
+      const idx = children.findIndex(child => child.nodeName === 'P');
+      const firstParagraph = createParagraph(children.slice(0, idx));
+      const hasReply = this.$comment.querySelector('.reply a') !== null;
+      if (hasReply) {
+        const reply = createReply(children.pop());
+        const otherParagraphs = createParagraphs(children.slice(idx));
+        const allParagraphs = [firstParagraph, ...otherParagraphs, reply];
+        allParagraphs.forEach(paragraph => body.appendChild(paragraph));
+        return body;
+      }
+      const otherParagraphs = createParagraphs(children.slice(idx));
+      const allParagraphs = [firstParagraph, ...otherParagraphs];
+      allParagraphs.forEach(paragraph => body.appendChild(paragraph));
+      return body;
     }
 
     getHeader() {
-      let userLink = this.$header.querySelector('a[href*=user]')
-      let timeSubmitted = this.$header.querySelector('a[href*=item]')
-      let toggle = document.createElement('a')
-      toggle.innerText = '[-]'
-      toggle.className = 'toggle'
-      let header = document.createElement('div')
-      header.className = 'header'
-      header.appendChild(toggle)
-      var that = this
-      header.onclick = function() {
-        if (that.collapsed) {
-          that.expand()
+      const userLink = this.$header.querySelector('a[href*=user]');
+      const timeSubmitted = this.$header.querySelector('a[href*=item]');
+      const toggle = document.createElement('a');
+      toggle.innerText = '[-]';
+      toggle.className = 'toggle';
+      const header = document.createElement('div');
+      header.className = 'header';
+      header.appendChild(toggle);
+      const comment = this;
+      header.onclick = function onclick() {
+        if (comment.collapsed) {
+          comment.expand();
         } else {
-          that.collapse()
+          comment.collapse();
         }
-      }
+      };
 
       if (userLink) {
-        header.appendChild(userLink)
-        header.appendChild(timeSubmitted)
+        header.appendChild(userLink);
+        header.appendChild(timeSubmitted);
       } else {
-        header.className = 'header dead'
-        let deadText = document.createElement('span')
-        deadText.innerText = '[dead]'
-        header.appendChild(deadText)
+        header.className = 'header dead';
+        const deadText = document.createElement('span');
+        deadText.innerText = '[dead]';
+        header.appendChild(deadText);
       }
-      let childCount = document.createElement('span')
-      childCount.className = 'child-count'
-      header.appendChild(childCount)
-      return header
+      const childCount = document.createElement('span');
+      childCount.className = 'child-count';
+      header.appendChild(childCount);
+      return header;
     }
 
     collapse() {
-      this.collapsed = true
-      this.element.querySelector('.body').style.display = 'none'
-      this.header.querySelector('.toggle').innerText = '[+]'
-      const childCount = `(${this.childCount} children)`
-      this.header.querySelector('.child-count').innerText = childCount
+      this.collapsed = true;
+      this.element.querySelector('.body').style.display = 'none';
+      this.header.querySelector('.toggle').innerText = '[+]';
+      const childCount = `(${this.childCount} children)`;
+      this.header.querySelector('.child-count').innerText = childCount;
     }
 
     expand() {
-      this.collapsed = false
-      this.element.querySelector('.body').style.display = 'block'
-      this.header.querySelector('.toggle').innerText = '[-]'
-      this.header.querySelector('.child-count').innerText = ''
+      this.collapsed = false;
+      this.element.querySelector('.body').style.display = 'block';
+      this.header.querySelector('.toggle').innerText = '[-]';
+      this.header.querySelector('.child-count').innerText = '';
     }
 
     get childCount() {
-      return this.children.reduce((acc, x) => acc + 1 + x.childCount, 0)
+      return this.children.reduce((acc, child) => acc + 1 + child.childCount, 0);
     }
   }
 
-  class CommentParser {
+  class HnCommentParser {
     constructor(rootNode) {
-      this.rootNode = rootNode
+      this.rootNode = rootNode;
     }
 
     parse() {
-      let comments = []
-      let potentialParents = []
-      let $comments = Array.from(rootNode.querySelectorAll('tr.athing'))
+      const comments = [];
+      const potentialParents = [];
+      const $comments = Array.from(this.rootNode.querySelectorAll('tr.athing'));
 
       // skip the first on purpose (it's the post submission details)
       $comments.slice(1).forEach($comment => {
-        let indentLevel = this.getCommentIndentLevel($comment)
-        let parent = this.getCommentParent(potentialParents, indentLevel)
-        let comment = new Comment($comment, indentLevel, parent)
+        const indentLevel = this.getCommentIndentLevel($comment);
+        const parent = this.getCommentParent(potentialParents, indentLevel);
+        const comment = new HnComment($comment, indentLevel, parent);
 
         if (!parent) {
-          comments.push(comment)
+          comments.push(comment);
         } else {
-          parent.children.push(comment)
+          parent.children.push(comment);
         }
 
-        potentialParents.push(comment)
-      })
+        potentialParents.push(comment);
+      });
 
-      return comments
+      return comments;
     }
 
     getCommentIndentLevel($comment) {
-      return $comment.querySelector('.ind > img').getAttribute('width') / 40
+      return $comment.querySelector('.ind > img').getAttribute('width') / 40;
     }
 
     getCommentParent(potentialParents, indentLevel) {
       while (potentialParents.length > 0) {
-        let potentialParent = potentialParents.slice(-1)[0]
-        if (potentialParent.indentLevel == indentLevel - 1) {
-          return potentialParent
+        const potentialParent = potentialParents.slice(-1)[0];
+        if (potentialParent.indentLevel === indentLevel - 1) {
+          return potentialParent;
         }
-        potentialParents.pop()
+        potentialParents.pop();
       }
     }
   }
 
-  let stylesheets = Array.from(document.querySelectorAll('link[rel=stylesheet]'))
-  stylesheets.forEach(x => x.remove())
-
-  let rootNode = document.body
-  let comments = new CommentParser(rootNode).parse()
-
-  rootNode.innerHTML = ''
-  let container = document.createElement('div')
-  container.className = 'container'
-  comments.forEach(comment => attachCommentWithChildren(comment, container))
-  rootNode.appendChild(container)
-
   function attachCommentWithChildren(comment, parent) {
-    let element = comment.element
-    let body = element.querySelector('.body')
-    comment.children.forEach(child => attachCommentWithChildren(child, body))
-    parent.appendChild(element)
+    const element = comment.element;
+    const body = element.querySelector('.body');
+    comment.children.forEach(child => attachCommentWithChildren(child, body));
+    parent.appendChild(element);
   }
-})()
+
+  const stylesheets = Array.from(document.querySelectorAll('link[rel=stylesheet]'));
+  stylesheets.forEach(stylesheet => stylesheet.remove());
+
+  const rootNode = document.body;
+  const comments = new HnCommentParser(rootNode).parse();
+
+  rootNode.innerHTML = '';
+  const container = document.createElement('div');
+  container.className = 'container';
+  comments.forEach(comment => attachCommentWithChildren(comment, container));
+  rootNode.appendChild(container);
+})();
 
