@@ -8,7 +8,7 @@
         "*://news.ycombinator.com/item?*"
       ],
       "js": [
-        "hn-tree.js"
+        "bundle.js"
       ],
       "css": [
         "hn-tree.css"
